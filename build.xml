@@ -1,0 +1,134 @@
+<?xml version="1.0" ?>
+<project name="VIES" basedir="." default="build">
+    <property file="./build.properties" />
+    <taskdef classname="phing.tasks.ext.d51PearPkg2Task" name="d51pearpkg2" />
+    <taskdef classname="phing.tasks.ext.IlibPearDeployerTask" name="peardeploy" />
+    <taskdef classname="phing.tasks.ext.PhpCodeSnifferTask" name="phpcodesniffer" />
+
+    <property name="package-name" value="${phing.project.name}" />
+    <property name="version" value="1.0.0" />
+    <property name="stability" value="alpha" />
+    <property name="pear.channel" value="public.intraface.dk" />
+
+    <property name="source.dir" value="./" />
+    <property name="tests.dir" value="./tests" />
+
+    <target name="prepare">
+        <delete dir="${build.dir}" />
+    </target>
+
+    <target name="export">
+        <echo msg="Exporting SVN files" />
+        <delete dir="${build.dir}" />
+        <exec command="svn export ${source.dir} ${build.dir}" />
+        <mkdir dir="${reports.dir}" />
+        <mkdir dir="${reports.coverage.dir}" />
+    </target>
+
+    <target name="pear" depends="export">
+        <d51pearpkg2 dir="${build.dir}/" baseinstalldir="/">
+            <name>${package-name}</name>
+            <summary>VIES website</summary>
+            <channel>${pear.channel}</channel>
+            <description>
+                <!--        Don't exceed this width         -->
+                VIES website
+            </description>
+
+            <lead user="lsolesen" name="Lars Olesen" email="lars@legestue.net" />
+            <license>LGPL</license>
+
+            <version release="${version}" api="${version}" />
+            <stability release="${stability}" api="${stability}" />
+
+            <dirroles key="www">web</dirroles>
+
+            <release>
+                <install as="elevforeningen/index.php" name="www/index.php" />
+                <install as="elevforeningen/gfx/images/widepics/frontpage-hip.jpg" name="www/gfx/images/widepics/frontpage-hip.jpg" />
+                <install as="elevforeningen/gfx/images/widepics/frontpage-jumping.jpg" name="www/gfx/images/widepics/frontpage-jumping.jpg" />
+                <install as="elevforeningen/gfx/images/widepics/frontpage-piger.jpg" name="www/gfx/images/widepics/frontpage-piger.jpg" />
+                <install as="elevforeningen/gfx/images/logo.jpg" name="www/gfx/images/logo.jpg" />
+            </release>
+
+            <dependencies>
+                <php minimum_version="5.2.0" />
+
+                <pear minimum_version="1.6.0"
+                      recommended_version="1.6.1" />
+
+                <package name="XML_RPC"
+                         channel="pear.php.net"
+                         recommended_version="1.5.1"
+                         minimum_version="1.5.1" />
+
+                <package name="IntrafacePublic_CMS_HTML"
+                         channel="public.intraface.dk"
+                         recommended_version="0.1.0"
+                         minimum_version="0.1.0" />
+
+                <package name="IntrafacePublic_CMS_XMLRPC"
+                         channel="public.intraface.dk"
+                         recommended_version="0.1.0"
+                         minimum_version="0.1.0" />
+
+            </dependencies>
+
+            <changelog version="0.0.1" date="2007-12-01" license="LGPL">
+                * Initial as a pear package
+            </changelog>
+            <notes>
+                * Changed to konstrukt
+            </notes>
+        </d51pearpkg2>
+    </target>
+
+    <target name="build" depends="prepare, export, test, phpcs, php-documentor, make-pearpackage">
+    </target>
+
+    <target name="make-pearpackage" depends="pear">
+        <echo msg="Creating PEAR archive file for ${package-name}" />
+        <mkdir dir="${build.dir}/${package-name}-${version}" />
+        <copy todir="${build.dir}/${package-name}-${version}">
+            <fileset dir="${build.dir}">
+                <include name="**" />
+            </fileset>
+        </copy>
+        <tar compression="gzip" destfile="${build.dir}/${package-name}-${version}.tgz" basedir="${build.dir}" />
+    </target>
+
+    <target name="deploy" depends="make-pearpackage">
+        <echo msg="Deploying package" />
+        <peardeploy uri="${pear.channel.uri}" username="${pear.channel.username}" password="${pear.channel.password}">
+              <fileset dir="./">
+                <include name="${package-name}-${version}.tgz"/>
+              </fileset>
+        </peardeploy>
+    </target>
+
+  <target name="php-documentor">
+    <delete dir="${api.dir}" />
+    <mkdir dir="${api.dir}" />
+    <exec dir="./build/" command="phpdoc -ue on -t ${api.dir} -d ./src/vies" passthru="true" />
+  </target>
+
+  <target name="test">
+    <delete dir="${reports.coverage.dir}" />
+    <mkdir dir="${reports.coverage.dir}" />
+
+    <exec dir="${source.dir}/tests/unit/" command="phpunit
+      --log-xml ${reports.dir}/phpunit.xml
+      --log-pmd ${reports.dir}/phpunit.pmd.xml
+      --coverage-xml ${reports.dir}/phpunit.coverage.xml
+      --coverage-html ${reports.coverage.dir}/
+      AllTests" passthru="true" />
+  </target>
+
+
+  <target name="phpcs">
+    <exec output="./build/logs/checkstyle.xml" dir="${source.dir}/src/vih/"
+      command="phpcs --report=checkstyle . --standard=PEAR" />
+  </target>
+
+
+</project>
