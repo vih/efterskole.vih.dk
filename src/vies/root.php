@@ -31,7 +31,7 @@ class VIES_Root extends k_Dispatcher
         $this->subspace = $this->context->getSubspace();
         $next = new IntrafacePublic_CMS_Controller_Index($this);
 
-        return $this->render($this->document->template, Array(
+        return $this->render($this->document->template, array(
             'content' => $next->handleRequest(),
             'encoding' => $this->document->encoding,
             'title' => $this->document->title,
@@ -43,5 +43,10 @@ class VIES_Root extends k_Dispatcher
     function getCMS()
     {
         return $this->registry->get('cms:client');
+    }
+
+    function getPathToTemplate($template)
+    {
+        return dirname(__FILE__) . '/templates/' . $template;
     }
 }
