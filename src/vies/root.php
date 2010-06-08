@@ -2,8 +2,7 @@
 class VIES_Root extends k_Dispatcher
 {
     public $debug = true;
-    public $map = array('cms'        => 'IntrafacePublic_CMS_Controller_Index',
-                        'stylesheet' => 'VIES_Stylesheet');
+    public $map = array('stylesheet' => 'VIES_Stylesheet');
 
     function __construct()
     {
@@ -14,11 +13,6 @@ class VIES_Root extends k_Dispatcher
         $this->document->navigation_section = array(
             array('url' => $this->url('http://vih.dk/'), 'navigation_name' => 'Vejle Idrætshøjskole')
         );
-    }
-
-    function execute()
-    {
-        throw new k_http_Redirect($this->url('cms'));
     }
 
     function handleRequest()
